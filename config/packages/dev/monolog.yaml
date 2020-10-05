@@ -1,3 +1,20 @@
+services:
+    Monolog\Processor\WebProcessor:
+        tags:
+            - { name: monolog.processor }
+
+    Monolog\Processor\IntrospectionProcessor:
+        tags:
+            - { name: monolog.processor }
+
+    monolog.formatter.dev:
+        class: Monolog\Formatter\LineFormatter
+        arguments:
+            - " >    %%datetime%% [%%level_name%%] %%message%%\n >>   %%extra.class%%:%%extra.function%%:%%extra.line%%\n >>>  %%extra.http_method%% %%extra.url%%\n >>>> %%context%%\n\n"
+            - "H:i:s"
+            - false
+            - false
+
 monolog:
     handlers:
         main:
@@ -5,14 +22,7 @@ monolog:
             path: "%kernel.logs_dir%/%kernel.environment%.log"
             level: debug
             channels: ["!event"]
-        # uncomment to get logging in your browser
-        # you may have to allow bigger header sizes in your Web server configuration
-        #firephp:
-        #    type: firephp
-        #    level: info
-        #chromephp:
-        #    type: chromephp
-        #    level: info
+            formatter: monolog.formatter.dev
         console:
             type: console
             process_psr_3_messages: false
