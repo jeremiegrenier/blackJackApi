@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Logic\Calculation\DealerProbabilityCalculator;
 use OpenApi\Annotations as OA;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,9 +18,13 @@ class DealerController extends AbstractController
     /** @var DealerProbabilityCalculator */
     protected $dealerProbabilityCalculator;
 
-    public function __construct(DealerProbabilityCalculator $dealerProbabilityCalculator)
+    /** @var LoggerInterface */
+    private $logger;
+
+    public function __construct(DealerProbabilityCalculator $dealerProbabilityCalculator, LoggerInterface $logger)
     {
         $this->dealerProbabilityCalculator = $dealerProbabilityCalculator;
+        $this->logger                      = $logger;
     }
 
     /**
@@ -68,35 +73,95 @@ class DealerController extends AbstractController
     {
         $body = json_decode($request->getContent(), true);
 
+        $this->logger->info(
+            'enter...',
+            [
+                'body' => $body,
+            ]
+        );
+
         if (!array_key_exists('hand', $body)) {
-            return new JsonResponse("Missing 'hand' array in the message body.", 422);
+            $message = "Missing 'hand' array in the message body.";
+
+            $this->logger->warning(
+                'Invalid body content',
+                [
+                    'message' => $message,
+                ]
+            );
+
+            return new JsonResponse($message, 422);
         }
 
         $hand = $body['hand'];
 
         foreach ($hand as $card) {
             if (!is_int($card) || $card < 1 || $card > 10) {
-                return new JsonResponse(sprintf("Wrong value found in 'hand': %s. Expected values are integer between 1 and 10 included", $card), 422);
+                $message = sprintf("Wrong value found in 'hand': %s. Expected values are integer between 1 and 10 included", $card);
+
+                $this->logger->warning(
+                    'Invalid body content',
+                    [
+                        'message' => $message,
+                    ]
+                );
+
+                return new JsonResponse($message, 422);
             }
         }
 
         if (!array_key_exists('remainingCards', $body)) {
-            return new JsonResponse("Missing 'remainingCards array in the message body.", 422);
+            $message = "Missing 'remainingCards array in the message body.";
+
+            $this->logger->warning(
+                'Invalid body content',
+                [
+                    'message' => $message,
+                ]
+            );
+
+            return new JsonResponse($message, 422);
         }
 
         $remainingCards = $body['remainingCards'];
 
         if (count($remainingCards) < 1) {
-            return new JsonResponse(sprintf("There should be at least a value in 'remainingCards', %s given", count($remainingCards)), 422);
+            $message = sprintf("There should be at least a value in 'remainingCards', %s given", count($remainingCards));
+
+            $this->logger->warning(
+                'Invalid body content',
+                [
+                    'message' => $message,
+                ]
+            );
+
+            return new JsonResponse($message, 422);
         }
 
         foreach ($remainingCards as $card) {
             if (!is_int($card) || $card < 1 || $card > 10) {
-                return new JsonResponse(sprintf("Wrong value found in 'remainingCards': %s. Expected values are integer between 1 and 10 included", $card), 422);
+                $message = sprintf("Wrong value found in 'remainingCards': %s. Expected values are integer between 1 and 10 included", $card);
+
+                $this->logger->warning(
+                    'Invalid body content',
+                    [
+                        'message' => $message,
+                    ]
+                );
+
+                return new JsonResponse($message, 422);
             }
         }
 
         $probability = $this->dealerProbabilityCalculator->getBustingProbability($hand, $remainingCards);
+
+        $this->logger->info(
+            'exit....',
+            [
+                'body'       => $body,
+                'proability' => $probability,
+            ]
+        );
 
         return new JsonResponse($probability);
     }
