@@ -10,12 +10,10 @@ services:
 monolog:
     handlers:
         main:
-            type: rotating_file
-            path: '%kernel.logs_dir%/%kernel.environment%.log'
+            type: stream
+            path: path: 'php://stdout'
             level: info
-            max_files: 30
             formatter: monolog.formatter.prod
-            process_psr_3_messages: false
         console:
             type: console
             process_psr_3_messages: false
